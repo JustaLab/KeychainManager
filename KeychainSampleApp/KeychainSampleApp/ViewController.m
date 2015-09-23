@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "KeychainManager.h"
 
 @interface ViewController ()
 
@@ -17,6 +18,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    
+    [[KeychainManager sharedInstance] saveValue:@"test123" identifier:@"myKey" accessGroup:nil];
+    
+    NSLog(@"%@",[[KeychainManager sharedInstance] valueWithIdentifer:@"myKey" accessGroup:nil]);
 }
 
 - (void)didReceiveMemoryWarning {
