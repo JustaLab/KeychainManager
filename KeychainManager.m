@@ -8,6 +8,13 @@
 
 #import "KeychainManager.h"
 
+@interface KeychainManager ()
+
+@property(nonatomic) NSString *bundleSeedId;
+
+@end
+
+
 @implementation KeychainManager
 
 + (KeychainManager *)sharedInstance{
@@ -22,7 +29,7 @@
 -(id)init{
     self = [super init];
     if (self) {
-        bundleSeedId = [KeychainManager getBundleSeedId];
+        _bundleSeedId = [KeychainManager getBundleSeedId];
     }
     return self;
 }
@@ -57,7 +64,7 @@
     //iPhone Simulator does not support keychain groups
 #else
     if (accessGroup !=nil && ![accessGroup isEqualToString:@""]) {
-        [dictionary setObject:[NSString stringWithFormat:@"%@.%@",bundleSeedId,accessGroup] forKey:(__bridge id)kSecAttrAccessGroup];
+        [dictionary setObject:[NSString stringWithFormat:@"%@.%@",self.bundleSeedId,accessGroup] forKey:(__bridge id)kSecAttrAccessGroup];
     }
 #endif
     
@@ -65,15 +72,13 @@
 }
 
 - (void)createKeychainItem:(NSDictionary *)item withValue:(NSString*)value{
-    NSLogDebug(@"Creating keychain item");
-
     NSMutableDictionary *newItem = [NSMutableDictionary dictionaryWithDictionary:item];
     NSData *data = [value dataUsingEncoding:NSUTF8StringEncoding];
     [newItem setObject:data forKey:(__bridge id)kSecValueData];
     
     OSStatus status = SecItemAdd((__bridge CFDictionaryRef)newItem, NULL);
     if (status != noErr) {
-        NSLogError(@"%@",[self resultCode:status]);
+        NSLog(@"Error creating keychain item: %@",[self resultCode:status]);
     }
     
     NSAssert(status == noErr, @"Could not create keychain item, error");
@@ -92,14 +97,13 @@
 }
 
 - (void)updateKeychainItem:(NSDictionary*)item withValue:(NSString *)value{
-    NSLogDebug(@"Updating keychain item");
     NSMutableDictionary *updateDictionary = [[NSMutableDictionary alloc] init];
     NSData *data = [value dataUsingEncoding:NSUTF8StringEncoding];
     [updateDictionary setObject:data forKey:(__bridge id)kSecValueData];
     
     OSStatus status = SecItemUpdate((__bridge CFDictionaryRef)item, (__bridge CFDictionaryRef)updateDictionary);
     if (status != noErr) {
-        NSLogError(@"%@",[self resultCode:status]);
+        NSLog(@"Error updating keychain: %@",[self resultCode:status]);
     }
     NSAssert(status == noErr, @"Could not update keychain item, error %@",[self resultCode:status]);
     
@@ -126,7 +130,6 @@
     [self deleteAllKeysForSecClass:kSecClassCertificate];
     [self deleteAllKeysForSecClass:kSecClassKey];
     [self deleteAllKeysForSecClass:kSecClassIdentity];
-    NSLogDebug(@"Keychain has been reset");
 }
 
 - (void)deleteAllKeysForSecClass:(CFTypeRef)secClass {
